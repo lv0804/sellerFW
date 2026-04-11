@@ -202,6 +202,19 @@ python3 -m pytest -m regression --alluredir=allure-results
 python3 -m pytest --alluredir=allure-results
 ```
 
+## GitHub Actions
+
+В репозитории настроен workflow `Pytest Smoke` в `.github/workflows/ci.yml`.
+
+Он:
+
+- запускается на `push` и `pull_request`
+- ставит зависимости из `requirements.txt`
+- запускает `smoke`-тесты
+- сохраняет `Allure`-результаты и `JUnit`-отчет в артефакты GitHub Actions
+
+Если нужно переопределить стенд для `Pytest Smoke`, можно завести repository variable `BASE_URL` в настройках GitHub.
+
 ## Частые проблемы
 
 ### `command not found: allure`
