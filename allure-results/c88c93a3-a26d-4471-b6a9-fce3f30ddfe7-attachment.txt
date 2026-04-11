@@ -1,2 +1,0 @@
-WARNING  urllib3.connectionpool:connectionpool.py:868 Retrying (Retry(total=1, connect=2, read=2, redirect=None, status=None)) after connection broken by 'OSError('Tunnel connection failed: 403 Forbidden')': /api/1/item
-WARNING  urllib3.connectionpool:connectionpool.py:868 Retrying (Retry(total=0, connect=2, read=2, redirect=None, status=None)) after connection broken by 'OSError('Tunnel connection failed: 403 Forbidden')': /api/1/item
