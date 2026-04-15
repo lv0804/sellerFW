@@ -1,259 +1,91 @@
 # sellerFW
 
-API-автотесты на `pytest` с маркерами `smoke`, `regression` и поддержкой Allure.
+UI-автотесты для задания 2.2 написаны на `pytest` + `Playwright`.  
+Целевой стенд: [cerulean-praline-8e5aa6.netlify.app](https://cerulean-praline-8e5aa6.netlify.app/).
 
-## Быстрый старт
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python3 -m pip install --upgrade pip
-pip install -r requirements.txt
-python3 -m pytest -m smoke --alluredir=allure-results
-```
-
-Если нужен HTML-отчет Allure:
-
-```bash
-brew install allure
-allure serve allure-results
-```
-
-## Что нужно для запуска
-
-- Python 3.10+; лучше 3.12
-- `pip`
-- `pytest`, `requests`, `allure-pytest` ставятся из `requirements.txt`
-- `allure` CLI нужен только для открытия HTML-отчета
-- `make` опционален, но удобен
-
-## Подготовка окружения
-
-Из корня проекта выполните:
+## Быстрый запуск
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python3 -m pip install --upgrade pip
 pip install -r requirements.txt
+make test-ui
 ```
 
-Если виртуальное окружение уже создано:
+Если на машине нет установленного Chrome/Chromium, один раз поставьте браузер Playwright:
 
 ```bash
-source .venv/bin/activate
+make install-browser
 ```
 
-## Базовый URL
+## Что запускается
 
-По умолчанию тесты используют:
+Команда `make test-ui` запускает файл `tests/test_ui_moderation_platform.py`, который покрывает:
 
-```bash
-https://qa-internship.avito.com
-```
+- фильтр `Диапазон цен`
+- сортировку `По цене`
+- фильтр `Категория`
+- тогл `Только срочные`
+- кнопки `Обновить`, `Остановить таймер`, `Запустить таймер` на странице статистики
+- переключение светлой и тёмной темы на мобильном viewport
 
-Если нужно запустить тесты на другом стенде:
+Все проверки содержат `assertions`.  
+Если в приложении есть баг, тест падает по фактическому дефекту, а не из-за сломанной логики теста.
 
-```bash
-export BASE_URL="https://your-stand.example.com"
-```
-
-Проверка текущего значения:
-
-```bash
-echo $BASE_URL
-```
-
-## Запуск тестов через pytest
-
-Все тесты:
-
-```bash
-python3 -m pytest --alluredir=allure-results
-```
-
-Только `smoke`:
-
-```bash
-python3 -m pytest -m smoke --alluredir=allure-results
-```
-
-Только `regression`:
-
-```bash
-python3 -m pytest -m regression --alluredir=allure-results
-```
-
-Один файл:
-
-```bash
-python3 -m pytest tests/test_suit_get_items_by_ID.py --alluredir=allure-results
-```
-
-Один конкретный тест:
-
-```bash
-python3 -m pytest tests/test_suit_get_items_by_ID.py::test_successful_request_with_valid_id --alluredir=allure-results
-```
-
-Более подробный вывод:
-
-```bash
-python3 -m pytest -v --alluredir=allure-results
-```
-
-## Запуск через Makefile
-
-Посмотреть все доступные команды:
+## Полезные команды
 
 ```bash
 make help
-```
-
-Основные команды:
-
-```bash
-make test
-make test-smoke
-make test-regression
+make test-ui
+make install-browser
 make allure
 make clean-allure
 ```
 
-Назначение команд:
-
-- `make test` запускает все тесты и сохраняет результаты в `allure-results`
-- `make test-smoke` запускает только `smoke`
-- `make test-regression` запускает только `regression`
-- `make allure` открывает Allure-отчет
-- `make clean-allure` удаляет папку `allure-results`
-
-## Как работает Allure
-
-Важно: флаг `--alluredir=allure-results` только сохраняет результаты тестов. Он не открывает отчет автоматически.
-
-Обычный сценарий такой:
-
-1. Запустить тесты:
+Запуск напрямую через `pytest`:
 
 ```bash
-python3 -m pytest -m smoke --alluredir=allure-results
+python3 -m pytest tests/test_ui_moderation_platform.py --alluredir=allure-results
 ```
 
-2. Открыть отчет:
+## Переменные окружения
+
+По умолчанию UI-тесты используют:
 
 ```bash
+https://cerulean-praline-8e5aa6.netlify.app
+```
+
+При необходимости можно переопределить адрес стенда:
+
+```bash
+export UI_BASE_URL="https://your-stand.example.com"
+```
+
+Если нужно явно указать браузерный бинарник:
+
+```bash
+export UI_BROWSER_EXECUTABLE_PATH="/path/to/browser"
+```
+
+## Отчет
+
+Результаты `pytest` сохраняются в `allure-results`.
+
+Чтобы открыть Allure-отчет:
+
+```bash
+brew install allure
 allure serve allure-results
 ```
 
-Если команда `allure` не найдена, установите CLI:
+## Примечание по воспроизводимости
 
-```bash
-brew install allure
-```
+Стенд общий для всех кандидатов, поэтому тесты не опираются на:
 
-Проверка установки:
+- фиксированное количество карточек
+- конкретные ID объявлений
+- неизменность данных между прогонами
 
-```bash
-allure --version
-```
-
-## Как читать результат pytest
-
-Пример:
-
-```text
-7 passed, 9 deselected, 1 skipped
-```
-
-Что означает каждый статус:
-
-- `passed` — тест прошел
-- `failed` — тест упал
-- `skipped` — тест пропущен
-- `deselected` — тест найден, но не запущен из-за фильтра, например `-m smoke`
-- `xfailed` — ожидаемое падение для теста, помеченного `xfail`
-- `xpassed` — тест был помечен `xfail`, но неожиданно прошел
-
-Пример с фильтром:
-
-- команда `python3 -m pytest -m smoke --alluredir=allure-results`
-- если всего в проекте 18 тестов, а `smoke` только 5, то pytest покажет `13 deselected`
-
-Это не ошибка. Это значит, что остальные тесты были отфильтрованы и не запускались.
-
-## Рекомендуемые команды
-
-Быстрая проверка перед изменениями:
-
-```bash
-python3 -m pytest -m smoke --alluredir=allure-results
-```
-
-Полный регрессионный прогон:
-
-```bash
-python3 -m pytest -m regression --alluredir=allure-results
-```
-
-Полная проверка проекта:
-
-```bash
-python3 -m pytest --alluredir=allure-results
-```
-
-## GitHub Actions
-
-В репозитории настроен workflow `Pytest Smoke` в `.github/workflows/ci.yml`.
-
-Он:
-
-- запускается на `push` и `pull_request`
-- ставит зависимости из `requirements.txt`
-- запускает `smoke`-тесты
-- сохраняет `Allure`-результаты и `JUnit`-отчет в артефакты GitHub Actions
-
-Если нужно переопределить стенд для `Pytest Smoke`, можно завести repository variable `BASE_URL` в настройках GitHub.
-
-## Частые проблемы
-
-### `command not found: allure`
-
-У вас не установлен Allure CLI или он не находится в `PATH`.
-
-Решение:
-
-```bash
-brew install allure
-allure --version
-```
-
-### `No module named pytest`
-
-Не активировано виртуальное окружение или не установлены зависимости.
-
-Решение:
-
-```bash
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-### Ошибка сети или стенд недоступен
-
-Проверьте:
-
-- интернет
-- VPN/прокси
-- значение `BASE_URL`
-- доступность стенда
-
-### Почему тесты не все запускаются
-
-Если вы используете:
-
-```bash
-python3 -m pytest -m smoke
-```
-
-то будут запущены только тесты с маркером `smoke`. Остальные попадут в `deselected`.
+Проверки выполняются по текущим видимым объявлениям и состояниям интерфейса.
