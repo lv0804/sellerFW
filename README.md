@@ -1,7 +1,7 @@
 # sellerFW
 
 API-автотесты на `pytest` с маркерами `smoke`, `regression` и поддержкой Allure +
-UI-автотесты для задания 2.2 написаны на `pytest` + `Playwright`.  
+UI-автотесты написанные на `pytest` + `Playwright`.  
 Целевой стенд: [cerulean-praline-8e5aa6.netlify.app](https://cerulean-praline-8e5aa6.netlify.app/).
 
 ## Быстрый запуск
