@@ -6,6 +6,8 @@ from time import monotonic
 
 import allure
 import pytest
+from tests.pages.moderation_page import ModerationPage
+from tests.settings import get_ui_base_url
 
 playwright_sync_api = pytest.importorskip(
     "playwright.sync_api",
@@ -18,7 +20,6 @@ expect = playwright_sync_api.expect
 sync_playwright = playwright_sync_api.sync_playwright
 
 
-UI_BASE_URL = os.getenv("UI_BASE_URL", "https://cerulean-praline-8e5aa6.netlify.app")
 KNOWN_CATEGORIES = {
     "Электроника",
     "Недвижимость",
@@ -150,7 +151,7 @@ def _extract_timer_seconds(page: Page) -> int | None:
 
 
 def _open_list_page(page: Page) -> None:
-    page.goto(UI_BASE_URL, wait_until="domcontentloaded", timeout=60_000)
+    page.goto(get_ui_base_url(), wait_until="domcontentloaded", timeout=60_000)
     _wait_for_list_ready(page)
 
 
@@ -203,29 +204,33 @@ def mobile_page(ui_browser: Browser) -> Page:
 @pytest.mark.ui
 @pytest.mark.regression
 def test_main_page_renders_core_layout(desktop_page: Page):
+    moderation_page = ModerationPage(desktop_page)
+
     with allure.step("Открыть главную страницу"):
-        desktop_page.goto(UI_BASE_URL, wait_until="domcontentloaded", timeout=60_000)
+        moderation_page.open()
 
     with allure.step("Проверить, что базовые разделы интерфейса отображаются"):
-        expect(desktop_page.get_by_text("Модерация Авито")).to_be_visible()
-        expect(desktop_page.get_by_role("link", name=re.compile("Объявления"))).to_be_visible()
-        expect(desktop_page.get_by_role("link", name=re.compile("Статистика"))).to_be_visible()
-        expect(desktop_page.get_by_role("button", name=re.compile("Темная|Светлая|Switch to"))).to_be_visible()
+        expect(moderation_page.title).to_be_visible()
+        expect(moderation_page.listings_link).to_be_visible()
+        expect(moderation_page.stats_link).to_be_visible()
+        expect(moderation_page.theme_toggle).to_be_visible()
 
 
 @pytest.mark.ui
 @pytest.mark.regression
 def test_main_page_renders_filter_controls(desktop_page: Page):
+    moderation_page = ModerationPage(desktop_page)
+
     with allure.step("Открыть главную страницу"):
-        desktop_page.goto(UI_BASE_URL, wait_until="domcontentloaded", timeout=60_000)
+        moderation_page.open()
 
     with allure.step("Проверить доступность ключевых элементов фильтрации"):
-        expect(desktop_page.get_by_text("Поиск по названию")).to_be_visible()
-        expect(desktop_page.get_by_text("🔥 Только срочные")).to_be_visible()
-        expect(desktop_page.get_by_text("Диапазон цен (₽)")).to_be_visible()
-        expect(desktop_page.locator('input[placeholder="От"]')).to_be_visible()
-        expect(desktop_page.locator('input[placeholder="До"]')).to_be_visible()
-        expect(desktop_page.get_by_role("button", name="Сбросить")).to_be_visible()
+        expect(moderation_page.search_label).to_be_visible()
+        expect(moderation_page.urgent_toggle).to_be_visible()
+        expect(moderation_page.price_range_label).to_be_visible()
+        expect(moderation_page.price_from_input).to_be_visible()
+        expect(moderation_page.price_to_input).to_be_visible()
+        expect(moderation_page.reset_button).to_be_visible()
 
 
 @pytest.mark.ui
@@ -237,13 +242,13 @@ def test_main_page_renders_filter_controls(desktop_page: Page):
 def test_main_page_filters_items_by_price_range(desktop_page: Page):
     min_price = 10_000
     max_price = 50_000
+    moderation_page = ModerationPage(desktop_page)
 
     with allure.step("Открыть главную страницу со списком объявлений"):
         _open_list_page(desktop_page)
 
     with allure.step(f"Применить фильтр цены от {min_price} до {max_price} рублей"):
-        desktop_page.locator('input[placeholder="От"]').fill(str(min_price))
-        desktop_page.locator('input[placeholder="До"]').fill(str(max_price))
+        moderation_page.set_price_filter(min_price, max_price)
         _wait_for_list_ready(desktop_page)
         cards = _parse_visible_cards(desktop_page)
 
@@ -262,12 +267,13 @@ def test_main_page_filters_items_by_price_range(desktop_page: Page):
     strict=True,
 )
 def test_main_page_sorts_items_by_price(desktop_page: Page):
+    moderation_page = ModerationPage(desktop_page)
+
     with allure.step("Открыть главную страницу со списком объявлений"):
         _open_list_page(desktop_page)
 
     with allure.step("Отсортировать объявления по цене по возрастанию"):
-        desktop_page.locator("select").nth(0).select_option(label="Цене")
-        desktop_page.locator("select").nth(1).select_option(label="По возрастанию")
+        moderation_page.sort_by_price_ascending()
         _wait_for_list_ready(desktop_page)
         ascending_cards = _parse_visible_cards(desktop_page)
 
@@ -280,7 +286,7 @@ def test_main_page_sorts_items_by_price(desktop_page: Page):
         )
 
     with allure.step("Переключить сортировку по цене на убывание"):
-        desktop_page.locator("select").nth(1).select_option(label="По убыванию")
+        moderation_page.sort_by_price_descending()
         _wait_for_list_ready(desktop_page)
         descending_cards = _parse_visible_cards(desktop_page)
 
@@ -301,12 +307,13 @@ def test_main_page_sorts_items_by_price(desktop_page: Page):
 )
 def test_main_page_filters_items_by_category(desktop_page: Page):
     selected_category = "Электроника"
+    moderation_page = ModerationPage(desktop_page)
 
     with allure.step("Открыть главную страницу со списком объявлений"):
         _open_list_page(desktop_page)
 
     with allure.step(f"Выбрать категорию '{selected_category}'"):
-        desktop_page.locator("select").nth(2).select_option(label=selected_category)
+        moderation_page.filter_by_category(selected_category)
         _wait_for_list_ready(desktop_page)
         cards = _parse_visible_cards(desktop_page)
 
@@ -325,11 +332,13 @@ def test_main_page_filters_items_by_category(desktop_page: Page):
     strict=True,
 )
 def test_main_page_shows_only_urgent_items_when_toggle_is_enabled(desktop_page: Page):
+    moderation_page = ModerationPage(desktop_page)
+
     with allure.step("Открыть главную страницу со списком объявлений"):
         _open_list_page(desktop_page)
 
     with allure.step("Включить фильтр 'Только срочные'"):
-        desktop_page.get_by_text("🔥 Только срочные").click()
+        moderation_page.enable_urgent_only()
         _wait_for_list_ready(desktop_page, timeout_ms=8_000)
         cards = _parse_visible_cards(desktop_page)
 
