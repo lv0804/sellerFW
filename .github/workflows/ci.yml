@@ -1,0 +1,60 @@
+name: Pytest Smoke
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke-tests:
+    name: Smoke tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest requests allure-pytest
+
+      - name: Run smoke tests
+        env:
+          BASE_URL: ${{ vars.BASE_URL != '' && vars.BASE_URL || 'https://qa-internship.avito.com' }}
+        run: |
+          mkdir -p test-results
+          python -m pytest -m "smoke and not ui" \
+            --alluredir=allure-results \
+            --junitxml=test-results/pytest-smoke.xml
+
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-smoke
+          path: allure-results
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload JUnit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-smoke-report
+          path: test-results/pytest-smoke.xml
+          if-no-files-found: warn
+          retention-days: 14

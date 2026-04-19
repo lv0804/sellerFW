@@ -1,1 +1,0 @@
-{"name": "test_successful_request_with_valid_seller_id", "status": "passed", "start": 1775834652684, "stop": 1775834653464, "uuid": "b0e404a8-aa06-446b-85e0-64d7bd3fbaa6", "testCaseId": "bcd45331ef6c0f8303db50b01945c8fd", "fullName": "tests.test_suit_get_item_by_sellerID#test_successful_request_with_valid_seller_id", "titlePath": ["tests", "test_suit_get_item_by_sellerID.py"]}
